@@ -284,7 +284,6 @@ void i2c_NAck(void)
 
 static void SW_i2c_udelay(uint16_t us)
 {
-	//delay_us(5);
 	asm("nop");
 	asm("nop");
 	asm("nop");
@@ -322,6 +321,7 @@ static void SW_i2c_udelay(uint16_t us)
 	asm("nop");
 	asm("nop");
 	asm("nop");
+
 }
 
 static void SW_i2c_start(void)
@@ -496,7 +496,8 @@ static void ms_Restart(void)
 
 #endif
 
-
+static uint32_t retry_count = 0;
+#define MAX_RETRY_COUNT		30000
 uint8_t qst_iic_write(uint8_t slave,uint8_t Addr, uint8_t Data)
 {
 #if defined(QST_SW_IIC)
@@ -546,19 +547,44 @@ uint8_t qst_iic_write(uint8_t slave,uint8_t Addr, uint8_t Data)
 
 	return 1;
 #else
-  while(I2C_GetFlagStatus(I2C_FLAG_BUSBUSY));
+  retry_count = 0;
+  while(I2C_GetFlagStatus(I2C_FLAG_BUSBUSY))
+  {
+  	if(retry_count++ > MAX_RETRY_COUNT)
+		return 0;
+  }
   /* 1.开始 */
   I2C_GenerateSTART(ENABLE);
-  while(!I2C_CheckEvent(I2C_EVENT_MASTER_MODE_SELECT)); //while(!(I2C->SR1&0x01));
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_MODE_SELECT)) //while(!(I2C->SR1&0x01));
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
   /* 2.设备地址/写 */
   I2C_Send7bitAddress(slave, I2C_DIRECTION_TX);
-  while(!I2C_CheckEvent(I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)); //while(!((I2C->SR1)&0x02));
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) //while(!((I2C->SR1)&0x02));
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
   /* 3.数据地址 */
   I2C_SendData((Addr&0xFF));
-  while(!I2C_CheckEvent(I2C_EVENT_MASTER_BYTE_TRANSMITTED)); //while(!(I2C->SR1 & 0x04));
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_BYTE_TRANSMITTED)) //while(!(I2C->SR1 & 0x04));  
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
   /* 4.写一字节数据 */
   I2C_SendData(Data);
-  while(!I2C_CheckEvent(I2C_EVENT_MASTER_BYTE_TRANSMITTED)); //while(!(I2C->SR1 & 0x04));
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_BYTE_TRANSMITTED)) //while(!(I2C->SR1 & 0x04));  
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
   /* 5.停止 */
   I2C_GenerateSTOP(ENABLE);
 
@@ -651,32 +677,72 @@ uint8_t qst_iic_read(uint8_t slave, uint8_t Addr, uint8_t *pData, uint16_t Lengt
 #else
   uint16_t cnt;
 
-  while(I2C_GetFlagStatus(I2C_FLAG_BUSBUSY));
+  retry_count = 0;
+  while(I2C_GetFlagStatus(I2C_FLAG_BUSBUSY))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
   /* 1.开始 */
   I2C_GenerateSTART(ENABLE);
-  while(!I2C_CheckEvent(I2C_EVENT_MASTER_MODE_SELECT));
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_MODE_SELECT))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
   /* 2.设备地址/写 */
   I2C_Send7bitAddress(slave, I2C_DIRECTION_TX);
-  while(!I2C_CheckEvent(I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
   /* 3.数据地址 */
   I2C_SendData((Addr&0xFF));
-  while(!I2C_CheckEvent(I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_BYTE_TRANSMITTED))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
   /* 4.重新开始 */
   I2C_GenerateSTART(ENABLE);
-  while(!I2C_CheckEvent(I2C_EVENT_MASTER_MODE_SELECT));
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_MODE_SELECT))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
   /* 5.设备地址/读 */
   I2C_Send7bitAddress(slave, I2C_DIRECTION_RX);
-  while(!I2C_CheckEvent(I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
   /* 6.读多字节数据 */
   for(cnt=0; cnt<(Length-1); cnt++)
   {
     I2C_AcknowledgeConfig(I2C_ACK_CURR);                             //产生应答
-    while(I2C_GetFlagStatus(I2C_FLAG_RXNOTEMPTY) == RESET);
+	retry_count = 0;
+    while(I2C_GetFlagStatus(I2C_FLAG_RXNOTEMPTY) == RESET)
+	{
+		if(retry_count++ > MAX_RETRY_COUNT)
+			return 0;
+	}
     *pData = I2C_ReceiveData();                                      //连续读取(Length-1)字节
     pData++;
   }
   I2C_AcknowledgeConfig(I2C_ACK_NONE);                               //读取最后1字节(产生非应答)
-  while(I2C_GetFlagStatus(I2C_FLAG_RXNOTEMPTY) == RESET);
+  retry_count = 0;
+  while(I2C_GetFlagStatus(I2C_FLAG_RXNOTEMPTY) == RESET)
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
   *pData = I2C_ReceiveData();                                        //读取数据
   /* 7.停止 */
   I2C_GenerateSTOP(ENABLE);
@@ -685,5 +751,392 @@ uint8_t qst_iic_read(uint8_t slave, uint8_t Addr, uint8_t *pData, uint16_t Lengt
 #endif
 }
 
+
+uint8_t qst_iic_read_2(uint8_t slave, uint8_t Addr, uint8_t *pData, uint16_t Length)
+{
+#if defined(QST_SW_IIC)
+	uint8_t i;
+
+	i2c_Start();
+	i2c_SendByte(slave);
+	if(i2c_WaitAck())
+	{
+		return 0;
+	}
+	i2c_SendByte(Addr);
+	if(i2c_WaitAck())
+	{
+		return 0;
+	}
+
+	i2c_Start();
+	i2c_SendByte(slave+1);
+	if(i2c_WaitAck())
+	{
+		return 0;
+	}
+
+	for(i=0;i<(Length-1);i++){
+		*pData=i2c_ReadByte(1);
+		pData++;
+	}
+	*pData=i2c_ReadByte(0);
+	i2c_Stop();
+
+	return 1;
+#elif defined(QST_SW_IIC_MTK)
+	uint8_t* Data_ptr;
+	uint16_t i;
+
+	Data_ptr = pData;
+
+	SW_i2c_start(); 					//start bit
+	ms_SendByte(slave);		//slave address|write bit
+	if(0 == ms_ChkAck())		//check Ack bit
+	{
+		//TO_DO: display ack check fail when send write id		
+		SW_i2c_stop();
+		return 0;
+	}
+		
+	ms_SendByte(Addr);				//send RegAddr
+	if(0 == ms_ChkAck())		//check Ack bit
+	{
+		//TO_DO: display ack check fail when send RegAddr		
+		SW_i2c_stop();
+		return 0;
+	}
+
+	//ms_Restart();						//restart bit
+	SW_i2c_start();
+	ms_SendByte(slave+1);		//slave address|read bit
+	if(0 == ms_ChkAck())
+	{
+		//TO_DO: display ack check fail when send read id		
+		SW_i2c_stop();
+		return 0;
+	}
+	for(i=Length; i>1; i--)
+	{
+		*Data_ptr = ms_ReadByteAck();	//read byte with ack
+		Data_ptr++;
+	}
+	*Data_ptr = ms_ReadByteNAck();		//read byte with non-ack to stop reading
+	SW_i2c_stop();						//stop bit
+	//TO_DO: add debug code to display the data received
+
+	return 1;
+#else
+  uint16_t cnt;
+
+  retry_count = 0;
+  while(I2C_GetFlagStatus(I2C_FLAG_BUSBUSY))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  /* 1.开始 */
+  I2C_GenerateSTART(ENABLE);
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_MODE_SELECT))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  /* 2.设备地址/写 */
+  I2C_Send7bitAddress(slave, I2C_DIRECTION_TX);
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  /* 3.数据地址 */
+  I2C_SendData((Addr&0xFF));
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_BYTE_TRANSMITTED))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  /* 4.重新开始 */
+  I2C_GenerateSTART(ENABLE);
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_MODE_SELECT))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  /* 5.设备地址/读 */
+  I2C_Send7bitAddress(slave, I2C_DIRECTION_RX);
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  /* 6.读多字节数据 */
+  for(cnt=0; cnt<(Length-1); cnt++)
+  {
+    I2C_AcknowledgeConfig(I2C_ACK_CURR);                             //产生应答
+	retry_count = 0;
+    while(I2C_GetFlagStatus(I2C_FLAG_RXNOTEMPTY) == RESET)
+	{
+		if(retry_count++ > MAX_RETRY_COUNT)
+			return 0;
+	}
+    *pData = I2C_ReceiveData();                                      //连续读取(Length-1)字节
+    pData++;
+  }
+  I2C_AcknowledgeConfig(I2C_ACK_NONE);                               //读取最后1字节(产生非应答)
+  retry_count = 0;
+  while(I2C_GetFlagStatus(I2C_FLAG_RXNOTEMPTY) == RESET)
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  *pData = I2C_ReceiveData();                                        //读取数据
+  /* 7.停止 */
+  I2C_GenerateSTOP(ENABLE);
+
+  return 1;
+#endif
+}
+
+
+
+#if defined(QST_CONFIG_JHM1200)
+uint8_t jhm1200_iic_write(uint8_t Addr, uint8_t* Buff, uint8_t Len)
+{
+#if defined(QST_SW_IIC)
+	uint8_t i;
+
+	i2c_Start();
+	i2c_SendByte(0xf0);
+	if(i2c_WaitAck())
+	{
+		return 0;
+	}
+	i2c_SendByte(Addr);	
+	if(i2c_WaitAck())
+	{
+		return 0;
+	}
+	for(i=0;i<Len;i++)
+	{
+		i2c_SendByte(Buff[i]);	
+		if(i2c_WaitAck())
+		{
+			return 0;
+		}
+	}
+	i2c_Stop();
+
+	return 1;
+#elif defined(QST_SW_IIC_MTK)
+	SW_i2c_start(); 					//start bit
+	ms_SendByte(0xf0);		//slave address|write bit
+	if(0 == ms_ChkAck())		//check Ack bit
+	{
+		//TO_DO: display check ack fail when send write id
+		SW_i2c_stop();
+		return 0;
+	}
+	ms_SendByte(Addr);				//send RegAddr
+	if(0 == ms_ChkAck())		//check Ack bit
+	{
+		//TO_DO: display check ack fail when send RegAddr
+		SW_i2c_stop();
+		return 0;
+	}
+	
+	for(i=0;i<Len;i++)
+	{
+		ms_SendByte(Buff[i]);					//send parameter
+		if(0 == ms_ChkAck())
+		{
+			//TO_DO: display check ack fail when send data
+			SW_i2c_stop();
+			return 0;
+		}
+	}
+	SW_i2c_stop();						//stop bit
+
+	return 1;
+#else
+  retry_count = 0;
+  while(I2C_GetFlagStatus(I2C_FLAG_BUSBUSY))
+  {
+  	if(retry_count++ > MAX_RETRY_COUNT)
+		return 0;
+  }
+  /* 1.开始 */
+  I2C_GenerateSTART(ENABLE);
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_MODE_SELECT)) //while(!(I2C->SR1&0x01));
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  /* 2.设备地址/写 */
+  I2C_Send7bitAddress(0xf0, I2C_DIRECTION_TX);
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) //while(!((I2C->SR1)&0x02));
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  /* 3.数据地址 */
+  I2C_SendData((Addr&0xFF));
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_BYTE_TRANSMITTED)) //while(!(I2C->SR1 & 0x04));  
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  /* 4.写一字节数据 */
+  for(i=0;i<Len;i++)
+  {
+	  I2C_SendData(Buff[i]);
+	  retry_count = 0;
+	  while(!I2C_CheckEvent(I2C_EVENT_MASTER_BYTE_TRANSMITTED)) //while(!(I2C->SR1 & 0x04));  
+	  {
+		  if(retry_count++ > MAX_RETRY_COUNT)
+			  return 0;
+	  }
+  }
+  /* 5.停止 */
+  I2C_GenerateSTOP(ENABLE);
+
+  return 1;
+#endif
+}
+
+
+uint8_t jhm1200_iic_read(uint8_t *pData, uint16_t Length)
+{
+#if defined(QST_SW_IIC)
+	uint8_t i;
+
+	i2c_Start();
+	i2c_SendByte(0xf1);
+	if(i2c_WaitAck())
+	{
+		return 0;
+	}
+
+	for(i=0;i<(Length-1);i++){
+		*pData=i2c_ReadByte(1);
+		pData++;
+	}
+	*pData=i2c_ReadByte(0);
+	i2c_Stop();
+
+	return 1;
+#elif defined(QST_SW_IIC_MTK)
+	uint8_t* Data_ptr;
+	uint16_t i;
+
+	Data_ptr = pData;
+
+	ms_Restart();						//restart bit
+	ms_SendByte(0xf1);		//slave address|read bit
+	if(0 == ms_ChkAck())
+	{
+		//TO_DO: display ack check fail when send read id		
+		SW_i2c_stop();
+		return 0;
+	}
+	for(i=Length; i>1; i--)
+	{
+		*Data_ptr = ms_ReadByteAck();	//read byte with ack
+		Data_ptr++;
+	}
+	*Data_ptr = ms_ReadByteNAck();		//read byte with non-ack to stop reading
+	SW_i2c_stop();						//stop bit
+	//TO_DO: add debug code to display the data received
+
+	return 1;
+#else
+  uint16_t cnt;
+
+  retry_count = 0;
+  while(I2C_GetFlagStatus(I2C_FLAG_BUSBUSY))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  /* 1.开始 */
+  I2C_GenerateSTART(ENABLE);
+#if 0
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_MODE_SELECT))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  /* 2.设备地址/写 */
+  I2C_Send7bitAddress(slave, I2C_DIRECTION_TX);
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  /* 3.数据地址 */
+  I2C_SendData((Addr&0xFF));
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_BYTE_TRANSMITTED))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  /* 4.重新开始 */
+  I2C_GenerateSTART(ENABLE);
+#endif
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_MODE_SELECT))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  /* 5.设备地址/读 */
+  I2C_Send7bitAddress(0xf0, I2C_DIRECTION_RX);
+  retry_count = 0;
+  while(!I2C_CheckEvent(I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED))
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  /* 6.读多字节数据 */
+  for(cnt=0; cnt<(Length-1); cnt++)
+  {
+    I2C_AcknowledgeConfig(I2C_ACK_CURR);                             //产生应答
+	retry_count = 0;
+    while(I2C_GetFlagStatus(I2C_FLAG_RXNOTEMPTY) == RESET)
+	{
+		if(retry_count++ > MAX_RETRY_COUNT)
+			return 0;
+	}
+    *pData = I2C_ReceiveData();                                      //连续读取(Length-1)字节
+    pData++;
+  }
+  I2C_AcknowledgeConfig(I2C_ACK_NONE);                               //读取最后1字节(产生非应答)
+  retry_count = 0;
+  while(I2C_GetFlagStatus(I2C_FLAG_RXNOTEMPTY) == RESET)
+  {
+	  if(retry_count++ > MAX_RETRY_COUNT)
+		  return 0;
+  }
+  *pData = I2C_ReceiveData();                                        //读取数据
+  /* 7.停止 */
+  I2C_GenerateSTOP(ENABLE);
+
+  return 1;
+#endif
+}
+
+
+#endif
 
 /**** Copyright (C)2017 strongerHuang. All Rights Reserved **** END OF FILE ****/

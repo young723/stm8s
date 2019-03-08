@@ -23,9 +23,9 @@ param([String]$debugfile = "");
 
 if ($debugfile -eq "")
 {
-& "C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.0\common\bin\cspybat" -f "D:\yzq_work\stm8\stm8s103k3\qst_sensor\settings\qst_sensor.Release.general.xcl" --backend -f "D:\yzq_work\stm8\stm8s103k3\qst_sensor\settings\qst_sensor.Release.driver.xcl" 
+& "C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.0\common\bin\cspybat" -f "D:\code\stm8\stm8s103k3\qst_sensor\settings\qst_sensor.Release.general.xcl" --backend -f "D:\code\stm8\stm8s103k3\qst_sensor\settings\qst_sensor.Release.driver.xcl" 
 }
 else
 {
-& "C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.0\common\bin\cspybat" -f "D:\yzq_work\stm8\stm8s103k3\qst_sensor\settings\qst_sensor.Release.general.xcl" --debug_file=$debugfile --backend -f "D:\yzq_work\stm8\stm8s103k3\qst_sensor\settings\qst_sensor.Release.driver.xcl" 
+& "C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.0\common\bin\cspybat" -f "D:\code\stm8\stm8s103k3\qst_sensor\settings\qst_sensor.Release.general.xcl" --debug_file=$debugfile --backend -f "D:\code\stm8\stm8s103k3\qst_sensor\settings\qst_sensor.Release.driver.xcl" 
 }

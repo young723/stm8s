@@ -2130,6 +2130,12 @@
             <name>$PROJ_DIR$\STM8S_StdPeriph_Driver\src\stm8s_tim1.c</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\STM8S_StdPeriph_Driver\src\stm8s_tim2.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\STM8S_StdPeriph_Driver\src\stm8s_tim4.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\STM8S_StdPeriph_Driver\src\stm8s_uart1.c</name>
         </file>
         <file>
@@ -2146,6 +2152,12 @@
         </file>
         <file>
             <name>$PROJ_DIR$\user\delay.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\user\fis210x.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\user\jhm1200.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\user\qmaX981.c</name>
@@ -2165,5 +2177,8 @@
     </group>
     <file>
         <name>$PROJ_DIR$\main.c</name>
+    </file>
+    <file>
+        <name>$PROJ_DIR$\stm8s_it.c</name>
     </file>
 </project>

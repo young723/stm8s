@@ -25,7 +25,7 @@ if not "%~1" == "" goto debugFile
 
 @echo on 
 
-"C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.0\common\bin\cspybat" -f "D:\yzq_work\stm8\stm8s103k3\qst_sensor\settings\qst_sensor.Debug.general.xcl" --backend -f "D:\yzq_work\stm8\stm8s103k3\qst_sensor\settings\qst_sensor.Debug.driver.xcl" 
+"C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.0\common\bin\cspybat" -f "D:\code\qst\qma7981\stm8s\qst_sensor\settings\qst_sensor.Debug.general.xcl" --backend -f "D:\code\qst\qma7981\stm8s\qst_sensor\settings\qst_sensor.Debug.driver.xcl" 
 
 @echo off 
 goto end 
@@ -34,7 +34,7 @@ goto end
 
 @echo on 
 
-"C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.0\common\bin\cspybat" -f "D:\yzq_work\stm8\stm8s103k3\qst_sensor\settings\qst_sensor.Debug.general.xcl" "--debug_file=%~1" --backend -f "D:\yzq_work\stm8\stm8s103k3\qst_sensor\settings\qst_sensor.Debug.driver.xcl" 
+"C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.0\common\bin\cspybat" -f "D:\code\qst\qma7981\stm8s\qst_sensor\settings\qst_sensor.Debug.general.xcl" "--debug_file=%~1" --backend -f "D:\code\qst\qma7981\stm8s\qst_sensor\settings\qst_sensor.Debug.driver.xcl" 
 
 @echo off 
 :end

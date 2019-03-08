@@ -29,7 +29,8 @@
   
 /* Uncomment the line below according to the target STM8S or STM8A device used in your
    application. */
-#define STM8S103
+//#define STM8S103
+//#define STM8S105
  /* #define STM8S208 */      /*!< STM8S High density devices with CAN */
  /* #define STM8S207 */      /*!< STM8S High density devices without CAN */
  /* #define STM8S007 */      /*!< STM8S Value Line High density devices */

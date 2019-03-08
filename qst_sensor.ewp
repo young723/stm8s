@@ -188,7 +188,10 @@
                 </option>
                 <option>
                     <name>CCDefines</name>
-                    <state>QST_CONFIG_QMP6988</state>
+                    <state>STM8S103</state>
+                    <state>QST_CONFIG_QMAX981</state>
+                    <state>USE_SPI</state>
+                    <state>QST_SW_IIC</state>
                 </option>
                 <option>
                     <name>CCPreprocFile</name>
@@ -1641,6 +1644,12 @@
             <name>$PROJ_DIR$\STM8S_StdPeriph_Driver\src\stm8s_tim1.c</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\STM8S_StdPeriph_Driver\src\stm8s_tim2.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\STM8S_StdPeriph_Driver\src\stm8s_tim4.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\STM8S_StdPeriph_Driver\src\stm8s_uart1.c</name>
         </file>
         <file>
@@ -1657,6 +1666,12 @@
         </file>
         <file>
             <name>$PROJ_DIR$\user\delay.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\user\fis210x.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\user\jhm1200.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\user\qmaX981.c</name>
@@ -1676,5 +1691,8 @@
     </group>
     <file>
         <name>$PROJ_DIR$\main.c</name>
+    </file>
+    <file>
+        <name>$PROJ_DIR$\stm8s_it.c</name>
     </file>
 </project>
